@@ -1,0 +1,30 @@
+{
+  "name": "eth-netcompile",
+  "version": "0.0.1",
+  "description": "A webservice for compiling source code to EVM bytecode for the ethereum platform.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/swaldman/eth-netcompile.git"
+  },
+  "keywords": [
+    "ethereum",
+    "solidity",
+    "solc"
+  ],
+  "author": "Steve Waldman <swaldman@mchange.com>",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/swaldman/eth-netcompile/issues"
+  },
+  "homepage": "https://github.com/swaldman/eth-netcompile#readme",
+  "dependencies" : { 
+     "solc" : ">=0.4.0",
+     "express" : "^4.15.2",
+     "body-parser" : "^1.17.1",
+     "command-line-args" : "^4.0.2"
+  }
+}
