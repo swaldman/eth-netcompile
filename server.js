@@ -59,11 +59,10 @@ function doCompile( params, id ) {
 
 var rootHandler = function (req, res) {
 
-    var body = req.body
+    var call = req.body
     
-    //console.log( body )
+    console.log( call )
     
-    var call = JSON.parse( body )
     var version = call.jsonrpc
     var method  = call.method
     var params  = call.params
@@ -86,7 +85,7 @@ var rootHandler = function (req, res) {
 var options = commandLineArgs( commandLineOptionDefinitions )
 var port    = options["port"]
 
-app.post('/', bodyParser.raw( { "type":"*/*" } ), rootHandler)
+app.post('/', bodyParser.json( { "type":"*/*" } ), rootHandler)
 
 app.listen(port, function () {
   console.log('eth-netcompile app listening on port ' + port + '!')
