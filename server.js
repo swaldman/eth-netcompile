@@ -37,7 +37,7 @@ function doCompile( params, id ) {
     var language   = params.language
     var sourceFile = params.sourceFile
 
-    if ( language == "solidity" ) {
+    if ( language.toUpperCase() === "SOLIDITY" ) {
 	var rawOutput = solc.compile( sourceFile )
 	var contractsSection = rawOutput.contracts
 
@@ -61,7 +61,7 @@ var rootHandler = function (req, res) {
 
     var call = req.body
     
-    console.log( call )
+    // console.log( call )
     
     var version = call.jsonrpc
     var method  = call.method
