@@ -25,6 +25,7 @@
      "solc" : ">=0.4.0",
      "express" : "^4.15.2",
      "body-parser" : "^1.17.1",
-     "command-line-args" : "^4.0.2"
+     "command-line-args" : "^4.0.2",
+     "a-partition" : "^1.0.1" 
   }
 }

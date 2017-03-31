@@ -3,6 +3,8 @@ var bodyParser = require('body-parser')
 
 var commandLineArgs = require('command-line-args')
 
+var partition = require('a-partition')
+
 var commandLineOptionDefinitions = [
     { "name": 'port', "alias": 'p', "type":Number }
 ]
@@ -11,11 +13,11 @@ var solc = require('solc')
 
 var app = express()
 
-function createError( code, message, meaning, id ) {
+function createError( code, message, data, id ) {
     var errorObject = {
 	"code"    : code,
 	"message" : message,
-	"meaning" : meaning
+	"data"    : data
     }
     return {
 	"jsonrpc" : "2.0",
@@ -33,25 +35,41 @@ function createSuccess( result, id ) {
 }
 
 // TODO: optional compilerVersion, alternative sourceFiles, etc
-function doCompile( params, id ) { 
-    var language   = params.language
-    var sourceFile = params.sourceFile
+function doCompile( params, id ) {
+    var compilationInfo = params[0]
+
+    var language   = compilationInfo.language
+    var sourceFile = compilationInfo.sourceFile
 
     if ( language.toUpperCase() === "SOLIDITY" ) {
 	var rawOutput = solc.compile( sourceFile )
-	var contractsSection = rawOutput.contracts
 
-	var out = {}
-	for ( var rawContractName in contractsSection ) {
-	    var rawValue = contractsSection[rawContractName]
-	    var contractName = rawContractName.startsWith(":") ? rawContractName.substring(1) : rawContractName
-	    var filteredValue = {
-		"code"      : rawValue["bytecode"],
-		"metadata"  : rawValue["metadata"]
+	// console.log( rawOutput )
+
+	let [ warnings, errors ] = partition( rawOutput.errors, (elem) => elem.indexOf("Warning:") >= 0 )
+
+	if ( errors.length == 0 ) {
+	
+  	    var contractsSection = rawOutput.contracts
+
+	    var contracts = {}
+	    for ( var rawContractName in contractsSection ) {
+		var rawValue = contractsSection[rawContractName]
+		var contractName = rawContractName.startsWith(":") ? rawContractName.substring(1) : rawContractName
+		var filteredValue = {
+		    "code"      : rawValue["bytecode"],
+		    "metadata"  : rawValue["metadata"]
+		}
+		contracts[contractName] = filteredValue
 	    }
-	    out[contractName] = filteredValue
+	    var out = {
+		"contracts" : contracts,
+		"warnings"  : warnings
+	    }
+	    return createSuccess( out, id )
+	} else {
+	    return createError( -32602, "Invalid params", rawOutput.errors, id ) // include both errors and warnings
 	}
-	return createSuccess( out, id )
     } else {
 	return createError( -32602, "Invalid params", "Unknown language: '" + language + "'", id )
     }
