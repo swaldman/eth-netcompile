@@ -46,7 +46,12 @@ function doCompile( params, id ) {
 
 	// console.log( rawOutput )
 
-	let [ warnings, errors ] = partition( rawOutput.errors, (elem) => elem.indexOf("Warning:") >= 0 )
+        let [ warnings, errors ] = ("errors" in rawOutput) ? partition( rawOutput.errors, (elem) => elem.indexOf("Warning:") >= 0 ) : [[],[]]
+
+	// console.log( "warnings:" )
+	// console.log( warnings )
+	// console.log( "errors:" )
+	// console.log( errors )
 
 	if ( errors.length == 0 ) {
 	
