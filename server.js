@@ -1,17 +1,39 @@
 var express    = require('express')
 var bodyParser = require('body-parser')
 
+var solc = require('solc')
+
 var commandLineArgs = require('command-line-args')
 
 var partition = require('a-partition')
+
+var Worker = require('webworker-threads').Worker
 
 var commandLineOptionDefinitions = [
     { "name": 'port', "alias": 'p', "type":Number }
 ]
 
-var solc = require('solc')
-
 var app = express()
+
+
+var rootHandler = function (req, res) {
+
+    var call = req.body
+    
+    // console.log( call )
+    
+    var version = call.jsonrpc
+    var method  = call.method
+    var params  = call.params
+    var id      = call.id
+
+    if ( version != "2.0" ) {
+	// bad jsonrpc version
+	res.json( createError(-32600, "Invalid Request", "Unexpected jsonrpc version '" + version + "'", id ) )
+    } else if ( method == "ethdev_getLanguages" ) {
+	res.json( createSuccess( ["solidity"], id ) )
+    } else if ( method == "ethdev_compile" ) {
+	var worker = new Worker( function() {
 
 function createError( code, message, data, id ) {
     var errorObject = {
@@ -36,6 +58,8 @@ function createSuccess( result, id ) {
 
 // TODO: optional compilerVersion, alternative sourceFiles, etc
 function doCompile( params, id ) {
+    console.log( "In doCompile(...)" )
+    
     var compilationInfo = params[0]
 
     var language   = compilationInfo.language
@@ -44,7 +68,7 @@ function doCompile( params, id ) {
     if ( language.toUpperCase() === "SOLIDITY" ) {
 	var rawOutput = solc.compile( sourceFile )
 
-	// console.log( rawOutput )
+	console.log( rawOutput )
 
         let [ warnings, errors ] = ("errors" in rawOutput) ? partition( rawOutput.errors, (elem) => elem.indexOf("Warning:") >= 0 ) : [[],[]]
 
@@ -79,30 +103,26 @@ function doCompile( params, id ) {
 	return createError( -32602, "Invalid params", "Unknown language: '" + language + "'", id )
     }
 }
-
-var rootHandler = function (req, res) {
-
-    var call = req.body
-    
-    // console.log( call )
-    
-    var version = call.jsonrpc
-    var method  = call.method
-    var params  = call.params
-    var id      = call.id
-
-    if ( version != "2.0" ) {
-	// bad jsonrpc version
-	res.json( createError(-32600, "Invalid Request", "Unexpected jsonrpc version '" + version + "'", id ) )
-    } else if ( method == "ethdev_getLanguages" ) {
-	res.json( createSuccess( ["solidity"], id ) )
-    } else if ( method == "ethdev_compile" ) {
-	res.json( doCompile( params, id ) )
+	    this.onmessage = function (event) {
+		console.log( "Worker thread received event: " + JSON.stringify( event ) )
+		var out = doCompile( event.data.params, event.data.id )
+		console.log( "Compilation output: " + JSON.stringify( out ) )
+		postMessage( out )
+	    }
+	} )
+	worker.onmessage = function (event) {
+	    console.log( "Worker wrapper received event: " + event )
+	    res.json(event.data);
+	};
+	console.log( "Sending initial event..." )
+	worker.postMessage( { "params" : params, "id" : id } )
+	
+	// simple, synchronous
+	//res.json( doCompile( params, id ) )
     } else {
 	// unknown method
 	res.json( createError( -32601, "Method not found", "Unexpected method '" + method + "'", id ) )
     }
-	
 }
 
 var options = commandLineArgs( commandLineOptionDefinitions )

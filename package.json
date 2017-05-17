@@ -26,6 +26,7 @@
      "express" : "^4.15.2",
      "body-parser" : "^1.17.1",
      "command-line-args" : "^4.0.2",
-     "a-partition" : "^1.0.1" 
+     "a-partition" : "^1.0.1",
+     "webworker-threads" : "^0.7.11"
   }
 }
